@@ -5,7 +5,7 @@ const socials = [
   {
     name: "Instagram",
     icon: Instagram,
-    url: "#",
+    url: "https://www.instagram.com/tgc_events_1",
     color: "hover:text-pink-glow",
   },
   {
@@ -15,13 +15,13 @@ const socials = [
         <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.7a8.16 8.16 0 0 0 4.76 1.52v-3.4a4.85 4.85 0 0 1-1-.13z" />
       </svg>
     ),
-    url: "#",
+    url: "https://www.tiktok.com/@tgc_events1?_r=1&_t=ZS-946ST4WqapA",
     color: "hover:text-foreground",
   },
   {
     name: "YouTube",
     icon: Youtube,
-    url: "#",
+    url: "https://youtube.com/@tgceventz?si=gs1DmU0MCopmUjB3",
     color: "hover:text-destructive",
   },
 ];
