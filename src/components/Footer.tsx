@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Heart } from "lucide-react";
+import tgcLogo from "@/assets/tgc-logo.jpeg";
 
 const Footer = () => {
   return (
@@ -7,8 +8,10 @@ const Footer = () => {
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-3 gap-8 mb-8">
           <div>
-            <span className="font-heading text-2xl font-bold text-gradient-pink">TGC</span>
-            <span className="font-heading text-lg font-medium text-background ml-1">EVENTS</span>
+            <div className="flex items-center gap-2 mb-2">
+              <img src={tgcLogo} alt="TGC Events Logo" className="h-10 w-10 rounded-full object-cover" />
+              <span className="font-heading text-lg font-bold text-background">TGC EVENTS</span>
+            </div>
             <p className="font-body text-background/60 mt-3 text-sm">
               Creating unforgettable moments through exceptional catering, rentals, and event management.
             </p>
