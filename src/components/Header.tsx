@@ -9,7 +9,8 @@ const navLinks = [
   { label: "Home", path: "/" },
   { label: "Services", path: "/#services" },
   { label: "Book Now", path: "/booking" },
-  { label: "My Bookings", path: "/dashboard" },
+  { label: "My Bookings", path: "/mybookings" },
+  // { label: "Admin", path: "/admin-dashboard" },
 ];
 
 const Header = () => {

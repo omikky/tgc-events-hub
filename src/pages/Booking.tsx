@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import RentalForm from "@/components/RentalForm";
 import EventForm from "@/components/EventForm";
+import BothForm from "@/components/BothForm";
 import { Package, CalendarHeart, Layers } from "lucide-react";
 
 type BookingCategory = "rentals" | "services" | "both";
@@ -44,11 +45,10 @@ const Booking = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
                 onClick={() => setCategory(cat.key)}
-                className={`p-6 rounded-2xl border-2 text-left transition-all duration-300 ${
-                  category === cat.key
-                    ? "border-primary bg-accent shadow-pink"
-                    : "border-border bg-card hover:border-primary/50"
-                }`}
+                className={`p-6 rounded-2xl border-2 text-left transition-all duration-300 ${category === cat.key
+                  ? "border-primary bg-accent shadow-pink"
+                  : "border-border bg-card hover:border-primary/50"
+                  }`}
               >
                 <cat.icon className={`w-8 h-8 mb-3 ${category === cat.key ? "text-primary" : "text-muted-foreground"}`} />
                 <h3 className="font-heading text-lg font-semibold text-foreground">{cat.label}</h3>
@@ -60,20 +60,18 @@ const Booking = () => {
           {/* Forms */}
           {category && (
             <div className="bg-card rounded-2xl p-6 md:p-8 shadow-card space-y-8">
-              {(category === "rentals" || category === "both") && (
+              {category === "rentals" && (
                 <div>
-                  {category === "both" && (
-                    <h2 className="font-heading text-2xl font-bold text-foreground mb-6">
-                      <Package className="inline w-6 h-6 mr-2 text-primary" />
-                      Rental Details
-                    </h2>
-                  )}
+                  <h2 className="font-heading text-2xl font-bold text-foreground mb-6">
+                    <Package className="inline w-6 h-6 mr-2 text-primary" />
+                    Rental Details
+                  </h2>
                   <RentalForm />
                 </div>
               )}
 
-              {category === "both" && (
-                <div className="border-t border-border pt-8">
+              {category === "services" && (
+                <div>
                   <h2 className="font-heading text-2xl font-bold text-foreground mb-6">
                     <CalendarHeart className="inline w-6 h-6 mr-2 text-primary" />
                     Event Service Details
@@ -82,7 +80,15 @@ const Booking = () => {
                 </div>
               )}
 
-              {category === "services" && <EventForm />}
+              {category === "both" && (
+                <div>
+                  <h2 className="font-heading text-2xl font-bold text-foreground mb-6">
+                    <Layers className="inline w-6 h-6 mr-2 text-primary" />
+                    Full Package Details
+                  </h2>
+                  <BothForm />
+                </div>
+              )}
             </div>
           )}
         </div>
