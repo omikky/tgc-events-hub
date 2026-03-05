@@ -14,9 +14,38 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log("Connected to MongoDB"))
-    .catch(err => console.error("MongoDB connection error:", err));
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+    console.error("❌ CRITICAL ERROR: MONGODB_URI is not defined in environment variables!");
+} else {
+    // Hide password for logging
+    const safeUri = MONGODB_URI.replace(/:([^@]+)@/, ":****@");
+    console.log(`🔌 Attempting to connect to MongoDB: ${safeUri}`);
+}
+
+mongoose.connect(MONGODB_URI)
+    .then(() => {
+        console.log("✅ SUCCESS: Connected to MongoDB");
+    })
+    .catch(err => {
+        console.error("❌ ERROR: MongoDB connection failed!");
+        console.error("Reason:", err.message);
+        if (err.name === 'MongoParseError') {
+            console.error("Check if your connection string is formatted correctly.");
+        } else if (err.message.includes('ETIMEDOUT')) {
+            console.error("Connection timed out. Check IP whitelisting on MongoDB Atlas (Allow 0.0.0.0/0).");
+        }
+    });
+
+// Monitor Connection State
+mongoose.connection.on('error', err => {
+    console.error('🔴 MongoDB Runtime Error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+    console.warn('🟠 MongoDB disconnected. Retrying...');
+});
 
 // Email Transporter (Mock settings if not provided in .env)
 const transporter = nodemailer.createTransport({
