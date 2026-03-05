@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: tgc-events-hub
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: VITE_SUPABASE_URL
+        fromEnvVar: VITE_SUPABASE_URL
+      - key: VITE_SUPABASE_PUBLISHABLE_KEY
+        fromEnvVar: VITE_SUPABASE_PUBLISHABLE_KEY
