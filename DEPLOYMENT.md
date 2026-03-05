@@ -29,15 +29,28 @@ You must set these in the Render dashboard (under the **Environment** tab of you
 | `VITE_SUPABASE_URL` | Your Supabase URL. |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Your Supabase publishable key. |
 
-## Manual Deployment
+## Manual Deployment Fields
 
-If you prefer to create the service manually:
+If you are filling out the form on Render manually, use these values:
 
-1.  **Service Type**: Web Service
-2.  **Runtime**: Node
-3.  **Build Command**: `npm install && npm run build`
-4.  **Start Command**: `npm start`
-5.  **Environment Variables**: Add those listed above.
+| Field | Value |
+| :--- | :--- |
+| **Language** | `Node` (or `Bun` if available) |
+| **Build Command** | `bun install && bun run build` |
+| **Start Command** | `bun run start` |
+| **Root Directory** | (Leave empty) |
+
+## Required Environment Variables
+Go to the **Environment** tab and click **Add Environment Variable**:
+
+| Variable | Value |
+| :--- | :--- |
+| `NODE_ENV` | `production` |
+| `MONGODB_URI` | *Your MongoDB connection string* |
+| `EMAIL_USER` | *Your Email address* |
+| `EMAIL_PASS` | *Your Email App Password* |
+| `VITE_SUPABASE_URL` | *Your Supabase URL* |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | *Your Supabase Key* |
 
 ## Verification
 
