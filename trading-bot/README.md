@@ -131,6 +131,27 @@ npm run typecheck
 4. Only then set `MODE=live` and `USE_TESTNET=false`, starting with the
    smallest capital the exchange allows.
 
+## Control it from your phone (Telegram)
+
+Two optional layers, both off until you set `TELEGRAM_TOKEN`:
+
+- **Bot commands + alerts** — DMs you on every trade and responds to `/status`,
+  `/balance`, `/position`, `/pause`, `/resume`, `/stop`. Uses long-polling, so
+  **no public URL is required** — runs anywhere, even on a phone.
+- **Mini App dashboard** — a visual dashboard (equity, PnL, position,
+  Pause/Resume/Stop buttons) that opens inside Telegram. Requires a public
+  HTTPS URL and is authenticated with Telegram's signed `initData` (only your
+  `TELEGRAM_CHAT_ID` is allowed).
+
+Full setup (BotFather, chat id, Cloudflare tunnel, menu button) is in
+[`DEPLOY.md`](./DEPLOY.md).
+
+```
+src/telegram/   TelegramClient (polling) + Controller (commands/alerts) + format
+src/server/     ApiServer (Mini App HTTP API) + initData (HMAC auth)
+miniapp/        index.html — the Telegram Mini App dashboard
+```
+
 ## Roadmap ideas
 
 - Short-side / futures support and leverage-aware sizing

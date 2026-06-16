@@ -11,6 +11,20 @@ export interface RiskConfig {
   feeRate: number;
 }
 
+export interface TelegramConfig {
+  enabled: boolean;
+  token: string;
+  /** Authorized chat id. Only this chat may issue commands / receive alerts. */
+  chatId: string;
+}
+
+export interface MiniAppConfig {
+  enabled: boolean;
+  port: number;
+  /** Public https URL where the Mini App is reachable (for BotFather/menu button). */
+  publicUrl: string;
+}
+
 export interface BotConfig {
   exchange: string;
   apiKey: string;
@@ -24,6 +38,8 @@ export interface BotConfig {
   strategy: string;
   pollIntervalSeconds: number;
   risk: RiskConfig;
+  telegram: TelegramConfig;
+  miniApp: MiniAppConfig;
 }
 
 function num(name: string, fallback: number): number {
@@ -65,6 +81,16 @@ export function loadConfig(): BotConfig {
       maxOpenPositions: num("MAX_OPEN_POSITIONS", 1),
       maxDailyDrawdown: num("MAX_DAILY_DRAWDOWN", 0.05),
       feeRate: num("FEE_RATE", 0.001),
+    },
+    telegram: {
+      token: process.env.TELEGRAM_TOKEN ?? "",
+      chatId: process.env.TELEGRAM_CHAT_ID ?? "",
+      enabled: Boolean(process.env.TELEGRAM_TOKEN),
+    },
+    miniApp: {
+      port: num("MINIAPP_PORT", 8080),
+      publicUrl: process.env.MINIAPP_PUBLIC_URL ?? "",
+      enabled: bool("MINIAPP_ENABLED", false),
     },
   };
 

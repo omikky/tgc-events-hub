@@ -4,6 +4,7 @@ import type { Strategy } from "../strategies/Strategy.js";
 import { RiskManager } from "../risk/RiskManager.js";
 import { log } from "../utils/logger.js";
 import { unrealizedPnl, type Position } from "./Position.js";
+import type { BotEvent, BotEventHandler, BotSnapshot } from "./events.js";
 
 /**
  * The orchestrator. On each tick it:
@@ -14,6 +15,8 @@ import { unrealizedPnl, type Position } from "./Position.js";
  *      RiskManager, soft exits as the strategy dictates).
  *
  * It is exchange- and strategy-agnostic: everything comes through interfaces.
+ * Control (pause/resume/stop) and notifications are exposed so a Telegram bot
+ * or dashboard can drive it without the engine knowing those layers exist.
  */
 export class TradingBot {
   private readonly risk: RiskManager;
@@ -21,14 +24,25 @@ export class TradingBot {
   private dayStartEquity = 0;
   private dayKey = "";
   private halted = false;
+  private paused = false;
   private running = false;
+  private lastPrice = 0;
 
   constructor(
     private readonly config: BotConfig,
     private readonly exchange: ExchangeAdapter,
     private readonly strategy: Strategy,
+    private readonly onEvent: BotEventHandler = () => {},
   ) {
     this.risk = new RiskManager(config.risk);
+  }
+
+  private emit(event: BotEvent): void {
+    try {
+      this.onEvent(event);
+    } catch (err) {
+      log.warn("Event handler threw", { error: (err as Error).message });
+    }
   }
 
   async init(): Promise<void> {
@@ -54,7 +68,9 @@ export class TradingBot {
       try {
         await this.tick();
       } catch (err) {
-        log.error("Tick failed", { error: (err as Error).message });
+        const message = (err as Error).message;
+        log.error("Tick failed", { error: message });
+        this.emit({ type: "error", message });
       }
       await this.sleep(this.config.pollIntervalSeconds * 1000);
     }
@@ -62,6 +78,54 @@ export class TradingBot {
 
   stop(): void {
     this.running = false;
+  }
+
+  // --- Control surface (used by Telegram / dashboard) ---
+
+  /** Stop opening NEW positions. Existing positions are still managed (exits,
+   *  stop-loss, take-profit all keep working) — pausing must never strand a
+   *  position without its safety exits. */
+  pauseEntries(): void {
+    this.paused = true;
+    log.info("Entries paused");
+  }
+
+  resumeEntries(): void {
+    this.paused = false;
+    log.info("Entries resumed");
+  }
+
+  isPaused(): boolean {
+    return this.paused;
+  }
+
+  isRunning(): boolean {
+    return this.running;
+  }
+
+  /** A fresh point-in-time view. Hits the exchange for price + balance. */
+  async snapshot(): Promise<BotSnapshot> {
+    const equity = await this.equity();
+    const ticker = await this.exchange.fetchTicker(this.config.symbol);
+    const price = ticker.last;
+    const dayPnl = equity - this.dayStartEquity;
+    return {
+      mode: this.config.mode,
+      exchange: this.exchange.id,
+      symbol: this.config.symbol,
+      strategy: this.strategy.name,
+      running: this.running,
+      paused: this.paused,
+      halted: this.halted,
+      price,
+      equity,
+      dayStartEquity: this.dayStartEquity,
+      dayPnl,
+      dayPnlPct: this.dayStartEquity > 0 ? (dayPnl / this.dayStartEquity) * 100 : 0,
+      position: this.position
+        ? { ...this.position, unrealizedPnl: unrealizedPnl(this.position, price) }
+        : null,
+    };
   }
 
   /** A single evaluation cycle. Exposed for testing/backtests. */
@@ -76,6 +140,7 @@ export class TradingBot {
           dayStartEquity: this.dayStartEquity.toFixed(2),
           equity: equity.toFixed(2),
         });
+        this.emit({ type: "halt", equity, dayStartEquity: this.dayStartEquity });
       }
     }
 
@@ -86,6 +151,7 @@ export class TradingBot {
     );
     const ticker = await this.exchange.fetchTicker(this.config.symbol);
     const price = ticker.last;
+    this.lastPrice = price;
 
     // 1) Hard exits always take priority over strategy opinion.
     if (this.position) {
@@ -110,8 +176,8 @@ export class TradingBot {
     log.debug("Signal", { action: signal.action, reason: signal.reason, price });
 
     if (signal.action === "enter_long" && !this.position) {
-      if (this.halted) {
-        log.info("Skipping entry: trading halted for the day");
+      if (this.halted || this.paused) {
+        log.info("Skipping entry", { halted: this.halted, paused: this.paused });
         return;
       }
       if (!this.risk.canOpenAnother(this.position ? 1 : 0)) return;
@@ -147,6 +213,7 @@ export class TradingBot {
       notional: notional.toFixed(2),
       fee: order.fee.toFixed(4),
     });
+    this.emit({ type: "open", position: { ...this.position } });
   }
 
   private async closePosition(price: number, why: string): Promise<void> {
@@ -161,6 +228,7 @@ export class TradingBot {
       pnl: pnl.toFixed(4),
       fee: order.fee.toFixed(4),
     });
+    this.emit({ type: "close", reason: why, exitPrice: order.price, pnl });
   }
 
   /** Total account equity in the quote currency (free quote + position value). */

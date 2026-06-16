@@ -81,17 +81,54 @@ on Wi-Fi, and disable battery optimization for Termux.
 
 ---
 
-## Using / monitoring it from your phone
+## Using it from your phone via Telegram
 
-The bot currently logs to stdout; it has no GUI yet. Phone options today:
+The bot ships with a Telegram integration in two layers. Both are off until you
+add a token, so they never interfere with headless runs.
 
-- **SSH app** (Termius, JuiceSSH on Android; Termius, Blink on iOS): connect to
-  your VPS and run `pm2 logs` / `pm2 status` / `pm2 restart tgc-trading-bot`.
-- **Railway/Render dashboard** in your mobile browser shows live logs.
+### 1. Bot commands + alerts (no public URL needed)
 
-Best phone experience (not built yet): a **Telegram control layer** so the bot
-sends you trade alerts and accepts commands like `/status`, `/pause`, `/resume`.
-Ask and it can be added.
+1. In Telegram, open **@BotFather** → `/newbot` → copy the token.
+2. Put it in `.env`: `TELEGRAM_TOKEN=123456:ABC...`
+3. Start the bot, then message your new bot **once**. It replies with your chat
+   id. Put that in `.env` as `TELEGRAM_CHAT_ID=...` and restart.
+4. You'll now get a DM on every trade (open/close/PnL, halts, errors), and can
+   send commands:
+   - `/status` — state, equity, today's PnL, open position
+   - `/balance` · `/position`
+   - `/pause` — stop opening NEW trades (open positions keep their SL/TP)
+   - `/resume` · `/stop`
+
+Only `TELEGRAM_CHAT_ID` can control the bot; other chats are refused.
+
+### 2. Mini App dashboard (visual, opens inside Telegram)
+
+A web dashboard with live equity/PnL/position and Pause/Resume/Stop buttons,
+served by the bot and authenticated with Telegram's signed `initData`.
+
+It needs a **public HTTPS URL**. Easiest for a VPS/home setup is a Cloudflare
+Tunnel:
+
+1. Enable it in `.env`:
+   ```ini
+   MINIAPP_ENABLED=true
+   MINIAPP_PORT=8080
+   MINIAPP_PUBLIC_URL=https://your-tunnel.example.com
+   ```
+2. Expose the port over HTTPS, e.g.:
+   ```bash
+   cloudflared tunnel --url http://localhost:8080   # prints an https URL
+   # or: ngrok http 8080
+   ```
+   Put that https URL in `MINIAPP_PUBLIC_URL` and restart.
+3. In **@BotFather** → your bot → **Bot Settings → Menu Button → set web app
+   URL** to that https URL (or `/setmenubutton`). On Railway/Fly, just use the
+   service's public URL instead of a tunnel.
+4. Open your bot in Telegram and tap the menu button → the dashboard opens.
+
+Security: every Mini App API call must carry a valid Telegram `initData`, and
+the authenticated Telegram user must equal `TELEGRAM_CHAT_ID`, so only you can
+view state or send commands.
 
 ---
 
