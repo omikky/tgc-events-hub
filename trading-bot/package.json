@@ -1,0 +1,25 @@
+{
+  "name": "tgc-trading-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Modular, multi-exchange crypto trading bot with risk management and paper-trading by default.",
+  "scripts": {
+    "bot": "tsx src/index.ts",
+    "backtest": "tsx src/index.ts backtest",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "ccxt": "^4.4.0",
+    "dotenv": "^16.4.5",
+    "technicalindicators": "^3.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
