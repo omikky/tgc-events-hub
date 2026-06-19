@@ -69,8 +69,8 @@ measured on **different horizons** on purpose — a fast trend filter would flip
 bearish on the very dip that makes RSI oversold, so the two could never align:
 
 - **Trend filter:** price above a slow **EMA(50)** → the larger move is still up.
-- **Entry:** RSI(14) dips to/below ~35 → a short-term pullback to buy into.
-  Enter when trend is up **and** RSI is oversold.
+- **Entry:** RSI(14) dips to/below ~42 → a short-term pullback to buy into.
+  Enter when trend is up **and** RSI is in pullback territory.
 - **Soft exit:** RSI overbought (≥70), or price closes back below the EMA(50)
   (uptrend broken).
 - **Hard exit (always wins):** the RiskManager's stop-loss / take-profit prices,

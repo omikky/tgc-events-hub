@@ -8,6 +8,16 @@ There are 3 parts:
 - **Part 2** — control it from your phone with Telegram commands.
 - **Part 3** — (optional) the visual Mini App dashboard.
 
+> ### Instant offline preview (10 seconds)
+> Want to just watch it trade with zero setup, no account and no internet?
+> After `npm install`, run:
+> ```bash
+> EXCHANGE=demo npm run bot
+> ```
+> This uses built-in synthetic market data so you can see entries, exits and
+> P&L immediately. (The demo trends upward, so it looks very profitable — that
+> is NOT real-market behaviour, just a mechanics preview.)
+
 ---
 
 ## Part 1 — Get the bot running (paper mode)

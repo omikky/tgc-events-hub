@@ -46,8 +46,11 @@ export class RiskManager {
     const riskBudget = equity * this.cfg.riskPerTrade;
     let amount = riskBudget / riskPerUnit;
 
-    // Never risk more than the equity can actually buy.
-    const maxAffordable = equity / entryPrice;
+    // Never risk more than the equity can actually buy on spot. Reserve room for
+    // the entry fee AND for slippage/spread — a market buy fills at the ask, a
+    // bit above the last price used here — so cost + fee never exceeds balance.
+    const SLIPPAGE_BUFFER = 0.005; // 0.5% headroom
+    const maxAffordable = (equity * (1 - SLIPPAGE_BUFFER)) / (entryPrice * (1 + this.cfg.feeRate));
     if (amount > maxAffordable) amount = maxAffordable;
 
     amount = this.roundDown(amount, market.amountPrecision);
