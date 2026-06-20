@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>TGC Trading Bot — Dashboard Preview</title>
+    <style>
+      :root {
+        --bg: #17212b; --card: #232e3c; --text: #fff; --hint: #7d8b99;
+        --btn: #2ea6ff; --btn-text: #fff; --green: #4caf50; --red: #f0506e;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 16px; background: var(--bg); color: var(--text);
+        font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; max-width: 460px; margin: 0 auto; }
+      .banner { background: rgba(46,166,255,.15); color: var(--btn); border-radius: 10px;
+        padding: 8px 12px; font-size: 12px; margin-bottom: 14px; text-align: center; }
+      h1 { font-size: 18px; margin: 0 0 4px; }
+      .sub { color: var(--hint); font-size: 13px; margin-bottom: 16px; }
+      .card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+      .row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+      .row .k { color: var(--hint); font-size: 14px; }
+      .row .v { font-size: 15px; font-weight: 600; }
+      .big { font-size: 28px; font-weight: 700; }
+      .pos { color: var(--green); } .neg { color: var(--red); }
+      .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+        background: rgba(76,175,80,.18); color: var(--green); }
+      .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      button { border: 0; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600;
+        background: var(--btn); color: var(--btn-text); }
+      button.danger { background: var(--red); }
+      button:disabled { opacity: .5; }
+      .muted { color: var(--hint); font-size: 12px; text-align: center; margin-top: 14px; }
+    </style>
+  </head>
+  <body>
+    <div class="banner">📱 Static preview with sample data — this is how the Telegram Mini App dashboard looks.</div>
+    <h1>TGC Trading Bot</h1>
+    <div class="sub">paper · binance · BTC/USDT · scalping</div>
+
+    <div class="card">
+      <div class="row"><span class="k">Equity</span><span class="v big">1,039.96</span></div>
+      <div class="row"><span class="k">Today's P&amp;L</span><span class="v pos">+39.96 (+4.00%)</span></div>
+      <div class="row"><span class="k">Price</span><span class="v">121.78</span></div>
+      <div class="row"><span class="k">State</span><span class="v"><span class="pill">running</span></span></div>
+    </div>
+
+    <div class="card">
+      <div class="row"><span class="k">Position</span><span class="v">buy 8.54040</span></div>
+      <div class="row"><span class="k">Entry / SL / TP</span><span class="v">121.78 / 120.55 / 123.23</span></div>
+      <div class="row"><span class="k">Unrealized</span><span class="v pos">+8.20</span></div>
+    </div>
+
+    <div class="buttons">
+      <button disabled>⏸ Pause</button>
+      <button>▶️ Resume</button>
+      <button>↻ Refresh</button>
+      <button class="danger">🛑 Stop</button>
+    </div>
+    <div class="muted">In the real app these buttons control the live bot and the numbers auto-refresh every 5s.</div>
+  </body>
+</html>

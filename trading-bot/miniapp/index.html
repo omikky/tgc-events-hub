@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>TGC Trading Bot</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+      :root {
+        --bg: var(--tg-theme-bg-color, #17212b);
+        --card: var(--tg-theme-secondary-bg-color, #232e3c);
+        --text: var(--tg-theme-text-color, #fff);
+        --hint: var(--tg-theme-hint-color, #7d8b99);
+        --btn: var(--tg-theme-button-color, #2ea6ff);
+        --btn-text: var(--tg-theme-button-text-color, #fff);
+        --green: #4caf50;
+        --red: #f0506e;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; padding: 16px; background: var(--bg); color: var(--text);
+        font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+      }
+      h1 { font-size: 18px; margin: 0 0 4px; }
+      .sub { color: var(--hint); font-size: 13px; margin-bottom: 16px; }
+      .card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+      .row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+      .row .k { color: var(--hint); font-size: 14px; }
+      .row .v { font-size: 15px; font-weight: 600; }
+      .big { font-size: 28px; font-weight: 700; }
+      .pos { color: var(--green); }
+      .neg { color: var(--red); }
+      .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+      .pill.run { background: rgba(76,175,80,.18); color: var(--green); }
+      .pill.pause { background: rgba(240,80,110,.18); color: var(--red); }
+      .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      button {
+        border: 0; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600;
+        background: var(--btn); color: var(--btn-text); cursor: pointer;
+      }
+      button.danger { background: var(--red); }
+      button:disabled { opacity: .5; }
+      .muted { color: var(--hint); font-size: 12px; text-align: center; margin-top: 14px; }
+      #err { color: var(--red); font-size: 13px; min-height: 18px; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <h1>TGC Trading Bot</h1>
+    <div class="sub" id="meta">connecting…</div>
+
+    <div class="card">
+      <div class="row"><span class="k">Equity</span><span class="v big" id="equity">—</span></div>
+      <div class="row"><span class="k">Today's P&amp;L</span><span class="v" id="pnl">—</span></div>
+      <div class="row"><span class="k">Price</span><span class="v" id="price">—</span></div>
+      <div class="row"><span class="k">State</span><span class="v" id="state">—</span></div>
+    </div>
+
+    <div class="card" id="positionCard">
+      <div class="row"><span class="k">Position</span><span class="v" id="posSide">none</span></div>
+      <div class="row"><span class="k">Entry / SL / TP</span><span class="v" id="posLevels">—</span></div>
+      <div class="row"><span class="k">Unrealized</span><span class="v" id="posPnl">—</span></div>
+    </div>
+
+    <div class="buttons">
+      <button id="pauseBtn">⏸ Pause</button>
+      <button id="resumeBtn">▶️ Resume</button>
+      <button id="refreshBtn">↻ Refresh</button>
+      <button id="stopBtn" class="danger">🛑 Stop</button>
+    </div>
+    <div id="err"></div>
+    <div class="muted">Read-only mirror of the bot. Pausing stops new entries; open positions keep their stop-loss / take-profit.</div>
+
+    <script>
+      const tg = window.Telegram?.WebApp;
+      tg?.ready();
+      tg?.expand();
+      const initData = tg?.initData || "";
+
+      const $ = (id) => document.getElementById(id);
+      const fmt = (n, d = 2) => Number(n).toFixed(d);
+      const signed = (n, d = 2) => (n >= 0 ? "+" : "") + Number(n).toFixed(d);
+      const cls = (n) => (n >= 0 ? "pos" : "neg");
+
+      async function api(path, opts = {}) {
+        const res = await fetch(path, {
+          ...opts,
+          headers: { "x-init-data": initData, "content-type": "application/json", ...(opts.headers || {}) },
+        });
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.status);
+        return res.json();
+      }
+
+      function render(s) {
+        $("meta").textContent = `${s.mode} · ${s.exchange} · ${s.symbol} · ${s.strategy}`;
+        $("equity").textContent = fmt(s.equity);
+        const pnlEl = $("pnl");
+        pnlEl.textContent = `${signed(s.dayPnl)} (${signed(s.dayPnlPct)}%)`;
+        pnlEl.className = "v " + cls(s.dayPnl);
+        $("price").textContent = fmt(s.price);
+
+        const stateEl = $("state");
+        if (!s.running) stateEl.innerHTML = '<span class="pill pause">stopped</span>';
+        else if (s.halted) stateEl.innerHTML = '<span class="pill pause">halted</span>';
+        else if (s.paused) stateEl.innerHTML = '<span class="pill pause">paused</span>';
+        else stateEl.innerHTML = '<span class="pill run">running</span>';
+
+        if (s.position) {
+          $("posSide").textContent = `${s.position.side} ${fmt(s.position.amount, 6)}`;
+          $("posLevels").textContent = `${fmt(s.position.entryPrice)} / ${fmt(s.position.stopLoss)} / ${fmt(s.position.takeProfit)}`;
+          const up = $("posPnl");
+          up.textContent = signed(s.position.unrealizedPnl);
+          up.className = "v " + cls(s.position.unrealizedPnl);
+        } else {
+          $("posSide").textContent = "none";
+          $("posLevels").textContent = "—";
+          $("posPnl").textContent = "—";
+        }
+        $("pauseBtn").disabled = s.paused;
+        $("resumeBtn").disabled = !s.paused;
+      }
+
+      async function refresh() {
+        try {
+          $("err").textContent = "";
+          render(await api("/api/status"));
+        } catch (e) {
+          $("err").textContent = "Error: " + e.message;
+        }
+      }
+
+      async function control(action) {
+        try {
+          if (action === "stop" && tg) {
+            const ok = await new Promise((r) => tg.showConfirm("Stop the bot loop?", r));
+            if (!ok) return;
+          }
+          await api("/api/control", { method: "POST", body: JSON.stringify({ action }) });
+          tg?.HapticFeedback?.notificationOccurred("success");
+          await refresh();
+        } catch (e) {
+          $("err").textContent = "Error: " + e.message;
+        }
+      }
+
+      $("pauseBtn").onclick = () => control("pause");
+      $("resumeBtn").onclick = () => control("resume");
+      $("stopBtn").onclick = () => control("stop");
+      $("refreshBtn").onclick = refresh;
+
+      refresh();
+      setInterval(refresh, 5000);
+    </script>
+  </body>
+</html>

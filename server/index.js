@@ -6,12 +6,33 @@ const nodemailer = require("nodemailer");
 const Submission = require("./models/Submission");
 const Settings = require("./models/Settings");
 
+const {
+    applySecurity,
+    corsOptions,
+    authLimiter,
+    sensitiveLimiter,
+    validateSecrets,
+} = require("./lib/security");
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Fail fast if critical secrets are missing/weak (hard error in production).
+validateSecrets();
+
+// Security headers, rate limiting, NoSQL-injection & param-pollution protection.
+applySecurity(app);
+
+// CORS restricted to an allowlist (ALLOWED_ORIGINS / APP_URL).
+app.use(cors(corsOptions()));
+
+// Paystack webhook needs the RAW body to verify its signature, so it must be
+// registered BEFORE the JSON body parser and with a raw parser of its own.
+const { router: paymentsRouter, paystackWebhook } = require("./routes/payments");
+app.post("/api/payments/paystack/webhook", express.raw({ type: "*/*" }), paystackWebhook);
+
+// Cap body size to blunt large-payload abuse.
+app.use(express.json({ limit: "100kb" }));
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -58,7 +79,19 @@ const transporter = nodemailer.createTransport({
 
 const path = require("path");
 
-// Routes
+// --- PDigital Trading Bot subscription platform routes ---
+// Strict throttling on auth (anti credential-stuffing) and payments (anti abuse).
+app.use("/api/auth", authLimiter, require("./routes/auth"));
+app.use("/api", require("./routes/subscriptions")); // /api/plans, /api/subscription
+app.use("/api/payments", sensitiveLimiter, paymentsRouter);
+app.use("/api/exchange-accounts", sensitiveLimiter, require("./routes/exchangeAccounts"));
+app.use("/api/complaints", require("./routes/complaints"));
+app.use("/api/admin", require("./routes/admin"));
+
+// Health check
+app.get("/api/health", (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
+
+// --- Existing events-hub routes ---
 app.get("/api/settings/:key", async (req, res) => {
     try {
         const setting = await Settings.findOne({ key: req.params.key });
@@ -149,7 +182,7 @@ app.patch("/api/submissions/:id", async (req, res) => {
     }
 });
 
-// Serve frontend in production (Render/Vercel)
+// Serve frontend in production
 if (process.env.NODE_ENV === "production") {
     app.use(express.static(path.join(__dirname, "../dist")));
 
@@ -157,6 +190,17 @@ if (process.env.NODE_ENV === "production") {
         res.sendFile(path.join(__dirname, "../dist/index.html"));
     });
 }
+
+// Centralised error handler — returns generic messages, never leaks stack traces.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+    if (err && err.message === "Not allowed by CORS") {
+        return res.status(403).json({ error: "Origin not allowed" });
+    }
+    console.error("Unhandled error:", err && err.message);
+    if (res.headersSent) return;
+    res.status(500).json({ error: "Something went wrong" });
+});
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
